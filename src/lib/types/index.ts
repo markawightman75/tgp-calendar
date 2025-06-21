@@ -1,0 +1,49 @@
+export interface Member {
+  id: number;
+  name: string;
+  instrument: string | null;
+  email: string | null;
+  created_at: string;
+}
+
+export interface DateEntry {
+  id: number;
+  date: string;
+  day_type: 'wednesday' | 'friday' | 'saturday';
+  event_type: 'rehearsal' | 'gig';
+  notes: string | null;
+  created_at: string;
+}
+
+export interface Availability {
+  id: number;
+  member_id: number;
+  date_id: number;
+  status: 'unknown' | 'available' | 'unavailable';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberAvailability extends Availability {
+  member: Member;
+}
+
+export interface DateAvailability extends DateEntry {
+  availabilities: Availability[];
+}
+
+export interface ConsolidatedAvailability {
+  date: DateEntry;
+  available: Member[];
+  unavailable: Member[];
+  unknown: Member[];
+  allAvailable: boolean;
+  anyUnavailable: boolean;
+  allResponded: boolean;
+}
+
+export interface UserPreferences {
+  memberId: number | null;
+  memberName: string | null;
+  lastView: 'personal' | 'consolidated';
+}

@@ -1,20 +1,12 @@
 <script>
-  import Instruments from '$lib/components/Instruments.svelte';
+  import App from '$lib/components/App.svelte';
 </script>
 
-<div class="container">
-  <h1>TGP Calendar</h1>
-  <Instruments />
-</div>
+<App />
 
 <style>
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-  }
-  
-  h1 {
-    margin-bottom: 2rem;
+  :global(body) {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
 </style>
