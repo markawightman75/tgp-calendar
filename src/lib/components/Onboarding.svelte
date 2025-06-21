@@ -31,11 +31,6 @@
       }
     }
   }
-
-  function handleSkip() {
-    setView('consolidated');
-    onComplete();
-  }
 </script>
 
 <div class="onboarding-modal">
@@ -70,11 +65,7 @@
           disabled={!selectedMemberId}
         >
           Continue
-        </button>
-        
-        <button class="secondary-button" on:click={handleSkip}>
-          Just show band availability
-        </button>
+        </button>        
       </div>
     {/if}
   </div>
