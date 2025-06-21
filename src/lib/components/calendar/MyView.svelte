@@ -226,7 +226,10 @@
   }
   
   .event-gig-available {
-    border-left-color: #a78bfa; /* purple */
+    background-color: #f9fafb; /* Light gray background */
+    border-left-color: #d1d5db; /* Light gray border */
+    opacity: 0.8;
+    border-style: dashed;
   }
   
   .date-header {
@@ -255,7 +258,6 @@
   .event-type {
     font-size: 0.875rem;
     color: #6b7280;
-    text-transform: capitalize;
     font-weight: normal;
   }
   

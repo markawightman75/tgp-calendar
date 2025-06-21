@@ -212,7 +212,10 @@
   }
   
   .event-gig-available {
-    border-left-color: #a78bfa; /* purple */
+    background-color: #f9fafb; /* Light gray background */
+    border-left-color: #d1d5db; /* Light gray border */
+    opacity: 0.8;
+    border-style: dashed;
   }
   
   .date-header {
