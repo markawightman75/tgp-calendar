@@ -336,10 +336,17 @@
   }
   
   .event-gig-available {
-    background-color: #f9fafb; /* Light gray background */
-    border-left-color: #d1d5db; /* Light gray border */
-    opacity: 0.8;
-    border-style: dashed;
+    background-color: #f3f4f6; /* Slightly darker gray background */
+    border-left: 3px solid #9ca3af; /* Medium gray border */
+    border-style: solid;
+    border-top: 1px solid #e5e7eb; /* Subtle top border */
+    border-right: 1px solid #e5e7eb; /* Subtle right border */
+    border-bottom: 1px solid #e5e7eb; /* Subtle bottom border */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+  }
+  
+  .event-gig-available .event-type {
+    color: #4b5563; /* Darker gray for better readability */
   }
   
   .date-header {
