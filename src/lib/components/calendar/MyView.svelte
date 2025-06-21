@@ -36,7 +36,7 @@
       // Create a map for quick lookup
       availabilityMap = new Map();
       availability.forEach(a => {
-        availabilityMap.set(a.date_id, a.status);
+        availabilityMap.set(a.event_id, a.status);
       });
       
       loading = false;

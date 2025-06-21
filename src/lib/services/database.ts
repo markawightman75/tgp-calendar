@@ -34,7 +34,7 @@ export async function getMemberById(id: number): Promise<Member | null> {
 // Date functions
 export async function getDates(startDate?: string, endDate?: string): Promise<DateEntry[]> {
   let query = supabase
-    .from('dates')
+    .from('events')
     .select('*')
     .order('date');
   
@@ -75,7 +75,7 @@ export async function getDateAvailability(dateId: number): Promise<Availability[
   const { data, error } = await supabase
     .from('availability')
     .select('*')
-    .eq('date_id', dateId);
+    .eq('event_id', dateId);
   
   if (error) {
     console.error(`Error fetching availability for date ${dateId}:`, error);
@@ -94,7 +94,7 @@ export async function updateAvailability(
     .from('availability')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('member_id', memberId)
-    .eq('date_id', dateId);
+    .eq('event_id', dateId);
   
   if (error) {
     console.error(`Error updating availability for member ${memberId} and date ${dateId}:`, error);
@@ -108,7 +108,7 @@ export async function updateAvailability(
 export async function getConsolidatedAvailability(dateId: number): Promise<ConsolidatedAvailability | null> {
   // Get the date
   const { data: dateData, error: dateError } = await supabase
-    .from('dates')
+    .from('events')
     .select('*')
     .eq('id', dateId)
     .single();
@@ -133,7 +133,7 @@ export async function getConsolidatedAvailability(dateId: number): Promise<Conso
   const { data: availabilityData, error: availabilityError } = await supabase
     .from('availability')
     .select('*')
-    .eq('date_id', dateId);
+    .eq('event_id', dateId);
   
   if (availabilityError) {
     console.error(`Error fetching availability for date ${dateId}:`, availabilityError);

@@ -9,9 +9,9 @@ create table if not exists members (
   created_at timestamp with time zone default now()
 );
 
--- Dates table
-create table if not exists dates (
-  id bigint primary key generated always as identity,
+-- Events table
+create table if not exists events (
+  id serial primary key,
   date date not null unique,
   day_type text not null check (day_type in ('wednesday', 'friday', 'saturday')),
   event_type text not null default 'rehearsal' check (event_type in ('rehearsal', 'gig')),
@@ -23,17 +23,17 @@ create table if not exists dates (
 create table if not exists availability (
   id bigint primary key generated always as identity,
   member_id bigint not null references members(id) on delete cascade,
-  date_id bigint not null references dates(id) on delete cascade,
+  event_id bigint not null references events(id) on delete cascade,
   status text not null default 'unknown' check (status in ('unknown', 'available', 'unavailable')),
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  unique (member_id, date_id)
+  unique (member_id, event_id)
 );
 
 -- RLS Policies
 -- Enable RLS on all tables
 alter table members enable row level security;
-alter table dates enable row level security;
+alter table events enable row level security;
 alter table availability enable row level security;
 
 -- Allow public read access to all tables
@@ -42,8 +42,8 @@ create policy "Allow public read access to members"
   to anon, authenticated
   using (true);
 
-create policy "Allow public read access to dates"
-  on dates for select
+create policy "Allow public read access to events"
+  on events for select
   to anon, authenticated
   using (true);
 
@@ -52,35 +52,23 @@ create policy "Allow public read access to availability"
   to anon, authenticated
   using (true);
 
--- Allow public insert and update access to availability
-create policy "Allow public insert access to availability"
-  on availability for insert
-  to anon, authenticated
-  with check (true);
+-- Allow anonymous inserts and updates
+create policy "Allow anonymous inserts to members" on members for insert with check (true);
+create policy "Allow anonymous inserts to events" on events for insert with check (true);
+create policy "Allow anonymous inserts to availability" on availability for insert with check (true);
 
-create policy "Allow public update access to availability"
-  on availability for update
-  to anon, authenticated
-  using (true);
+create policy "Allow anonymous updates to members" on members for update using (true);
+create policy "Allow anonymous updates to events" on events for update using (true);
+create policy "Allow anonymous updates to availability" on availability for update using (true);
 
--- Sample data for testing
--- Insert 10 band members
+-- Insert 1 sample band member
 insert into members (name, instrument) values
-  ('John', 'Guitar'),
-  ('Mary', 'Vocals'),
-  ('Mike', 'Drums'),
-  ('Sarah', 'Bass'),
-  ('Tom', 'Keyboard'),
-  ('Lisa', 'Saxophone'),
-  ('David', 'Trumpet'),
-  ('Emma', 'Violin'),
-  ('Alex', 'Percussion'),
-  ('Olivia', 'Flute');
+  ('John', 'Guitar');
 
 -- Generate dates (Wednesdays, Fridays, and Saturdays until the end of 2025)
 -- This would be done with a function in a real implementation
 -- For now, we'll add a few sample dates
-insert into dates (date, day_type, event_type) values
+insert into events (date, day_type, event_type) values
   ('2025-06-25', 'wednesday', 'rehearsal'),
   ('2025-06-27', 'friday', 'rehearsal'),
   ('2025-06-28', 'saturday', 'gig'),
@@ -97,12 +85,12 @@ insert into dates (date, day_type, event_type) values
 do $$
 declare
   m_id bigint;
-  d_id bigint;
+  e_id bigint;
 begin
   for m_id in select id from members loop
-    for d_id in select id from dates loop
-      insert into availability (member_id, date_id, status)
-      values (m_id, d_id, 'unknown');
+    for e_id in select id from events loop
+      insert into availability (member_id, event_id, status)
+      values (m_id, e_id, 'unknown');
     end loop;
   end loop;
 end $$;

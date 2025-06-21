@@ -6,7 +6,7 @@ export interface Member {
   created_at: string;
 }
 
-export interface DateEntry {
+export interface Event {
   id: number;
   date: string;
   day_type: 'wednesday' | 'friday' | 'saturday';
@@ -18,7 +18,7 @@ export interface DateEntry {
 export interface Availability {
   id: number;
   member_id: number;
-  date_id: number;
+  event_id: number;
   status: 'unknown' | 'available' | 'unavailable';
   created_at: string;
   updated_at: string;
@@ -28,12 +28,12 @@ export interface MemberAvailability extends Availability {
   member: Member;
 }
 
-export interface DateAvailability extends DateEntry {
+export interface EventAvailability extends Event {
   availabilities: Availability[];
 }
 
 export interface ConsolidatedAvailability {
-  date: DateEntry;
+  event: Event;
   available: Member[];
   unavailable: Member[];
   unknown: Member[];
