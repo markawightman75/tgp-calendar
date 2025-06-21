@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getDates, getConsolidatedAvailability, createEvents } from '$lib/services/database';
+  import { getDates, getConsolidatedAvailability, createEvents, updateRehearsalStatus } from '$lib/services/database';
   import type { Event, ConsolidatedAvailability } from '$lib/types/index';
   
   // Function to get next occurrence of a specific day of week (0 = Sunday, 1 = Monday, etc.)
@@ -37,6 +37,7 @@
         newEvents.push({
           date: nextWed.toISOString().split('T')[0],
           event_type: 'rehearsal' as const,
+          rehearsal_status: 'unconfirmed',
           notes: 'Weekly rehearsal'
         });
         
@@ -84,6 +85,26 @@
   // Get current date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
 
+  async function handleRehearsalStatusChange(eventId: number, status: string) {
+    if (!['unconfirmed', 'confirmed', 'cancelled'].includes(status)) return;
+    
+    const success = await updateRehearsalStatus(
+      eventId, 
+      status as 'unconfirmed' | 'confirmed' | 'cancelled'
+    );
+    
+    if (success) {
+      // Update the local state
+      events = events.map(event => 
+        event.id === eventId 
+          ? { ...event, rehearsal_status: status as 'unconfirmed' | 'confirmed' | 'cancelled' } 
+          : event
+      );
+    } else {
+      alert('Failed to update rehearsal status');
+    }
+  }
+
   async function loadData() {
     try {
       loading = true;
@@ -116,21 +137,6 @@
     loadData();
   });
 
-  function getStatusClass(consolidated: ConsolidatedAvailability | undefined): string {
-    if (!consolidated) return 'status-unknown';
-    
-    if (consolidated.allAvailable) return 'status-all-available';
-    if (consolidated.anyUnavailable) return 'status-some-unavailable';
-    return 'status-some-available';
-  }
-
-  function getStatusIcon(consolidated: ConsolidatedAvailability | undefined): string {
-    if (!consolidated) return '❓';
-    if (consolidated.allAvailable) return '✓';
-    if (consolidated.anyUnavailable) return '✗';
-    return '?';
-  }
-
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-GB', { 
@@ -153,9 +159,9 @@
   function getEventTypeDisplay(eventType: string): string {
     switch (eventType) {
       case 'rehearsal': return 'Rehearsal';
-      case 'gig-confirmed': return 'Gig (confirmed)';
-      case 'gig-unconfirmed': return 'Gig (unconfirmed)';
-      case 'gig-available': return 'Gig (availability)';
+      case 'gig-confirmed': return 'Confirmed gig';
+      case 'gig-unconfirmed': return 'Possible gig (unconfirmed)';
+      case 'gig-available': return 'Potential gig date';
       default: return eventType;
     }
   }
@@ -163,7 +169,7 @@
 
 <div class="band-view">
   <div class="header-row">
-    <h2>Band Availability</h2>
+    <h2>Events</h2>
   </div>
   
   {#if loading}
@@ -177,16 +183,16 @@
       {#each events as event}
         {@const consolidated = consolidatedData.get(event.id)}
         {#if consolidated}
-          <div class="date-card {getEventClass(event.event_type)}" data-date-id={event.id}>
+          <div 
+            class="date-card {getEventClass(event.event_type)} {event.event_type === 'rehearsal' ? event.rehearsal_status || 'unconfirmed' : ''}" 
+            data-date-id={event.id}
+          >
             <div class="date-header">
               <div class="date-info">
                 <div class="date-day">
                   {formatDate(event.date)}
                   <span class="event-type">{getEventTypeDisplay(event.event_type)}</span>
                 </div>
-              </div>
-              <div class="status-indicator {getStatusClass(consolidated)}">
-                {getStatusIcon(consolidated)}
               </div>
             </div>
             
@@ -197,30 +203,30 @@
                 {:else}
                   <div class="status-details">
                     {#if consolidated}
-                      <div class="available-count">
-                        <span class="count">{consolidated.available.length}</span> available
-                        {#if consolidated.available.length > 0}
-                          <div class="member-names">
+                      {#if consolidated.available.length > 0}
+                        <div class="availability-line available">
+                          <span class="count">{consolidated.available.length} available:</span>
+                          <span class="member-names">
                             {consolidated.available.map(m => m.name).join(', ')}
-                          </div>
-                        {/if}
-                      </div>
+                          </span>
+                        </div>
+                      {/if}
                       
                       {#if consolidated.unavailable.length > 0}
-                        <div class="unavailable-count">
-                          <span class="count">{consolidated.unavailable.length}</span> unavailable
-                          <div class="member-names">
+                        <div class="availability-line unavailable">
+                          <span class="count">{consolidated.unavailable.length} unavailable:</span>
+                          <span class="member-names">
                             {consolidated.unavailable.map(m => m.name).join(', ')}
-                          </div>
+                          </span>
                         </div>
                       {/if}
                       
                       {#if consolidated.unknown.length > 0}
-                        <div class="unknown-count">
-                          <span class="count">{consolidated.unknown.length}</span> not responded
-                          <div class="member-names">
+                        <div class="availability-line unknown">
+                          <span class="count">{consolidated.unknown.length} not responded:</span>
+                          <span class="member-names">
                             {consolidated.unknown.map(m => m.name).join(', ')}
-                          </div>
+                          </span>
                         </div>
                       {/if}
                     {:else}
@@ -228,6 +234,25 @@
                     {/if}
                   </div>
                 {/if}
+              </div>
+            {/if}
+            
+            {#if event.event_type === 'rehearsal'}
+              <div class="rehearsal-status">
+                <label for={`rehearsal-status-${event.id}`}>Status:</label>
+                <select 
+                  id={`rehearsal-status-${event.id}`}
+                  value={event.rehearsal_status || 'unconfirmed'}
+                  on:change={(e) => {
+                    const target = e.target as HTMLSelectElement;
+                    handleRehearsalStatusChange(event.id, target.value);
+                  }}
+                  class="status-select {event.rehearsal_status || 'unconfirmed'}"
+                >
+                  <option value="unconfirmed">Unconfirmed</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
             {/if}
             
@@ -314,16 +339,105 @@
   }
   
   .date-card {
-    background-color: white;
+    background: white;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 1rem;
-    border-left: 4px solid #d1d5db;
-    transition: background-color 0.2s ease; /* Smooth transition for background color */
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #e5e7eb;
+    position: relative;
   }
   
   .event-rehearsal {
-    border-left-color: #60a5fa; /* blue */
+    border-left-color: #3b82f6; /* blue-500 */
+  }
+  
+  .event-rehearsal.confirmed {
+    border-left-color: #10b981; /* emerald-500 */
+  }
+  
+  .event-rehearsal.cancelled {
+    border-left-color: #ef4444; /* red-500 */
+    opacity: 0.8;
+  }
+  
+  .rehearsal-status {
+    margin: 1rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .rehearsal-status label {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: #4b5563;
+  }
+  
+  .availability-line {
+    display: flex;
+    align-items: flex-start;
+    margin: 0.25rem 0;
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
+  
+  .availability-line .count {
+    font-weight: 600;
+    margin-right: 0.25rem;
+    white-space: nowrap;
+  }
+  
+  .availability-line.available .count {
+    color: #10b981; /* emerald-600 */
+  }
+  
+  .availability-line.unavailable .count {
+    color: #ef4444; /* red-600 */
+  }
+  
+  .availability-line.unknown .count {
+    color: #6b7280; /* gray-500 */
+  }
+  
+  .availability-line .member-names {
+    color: #4b5563; /* gray-600 */
+  }
+  
+  .status-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db; /* gray-300 */
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .status-select:focus {
+    outline: none;
+    border-color: #3b82f6; /* blue-500 */
+    box-shadow: 0 0 0 1px #3b82f6; /* blue-500 */
+  }
+  
+  .status-select.confirmed {
+    background-color: #f0fdf4; /* emerald-50 */
+    border-color: #10b981; /* emerald-500 */
+    color: #065f46; /* emerald-800 */
+  }
+  
+  .status-select.cancelled {
+    background-color: #fef2f2; /* red-50 */
+    border-color: #ef4444; /* red-500 */
+    color: #991b1b; /* red-800 */
+    text-decoration: line-through;
   }
   
   .event-gig-confirmed {
@@ -387,21 +501,6 @@
     justify-content: center;
     font-size: 1.25rem;
     font-weight: 700;
-  }
-  
-  .all-available {
-    background-color: #d1fae5;
-    color: #047857;
-  }
-  
-  .some-unavailable {
-    background-color: #fee2e2;
-    color: #b91c1c;
-  }
-  
-  .some-unknown {
-    background-color: #f3f4f6;
-    color: #6b7280;
   }
   
   .availability-details {

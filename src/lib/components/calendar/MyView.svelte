@@ -89,9 +89,9 @@
   function getEventTypeDisplay(eventType: string): string {
     switch (eventType) {
       case 'rehearsal': return 'Rehearsal';
-      case 'gig-confirmed': return 'Gig (confirmed)';
-      case 'gig-unconfirmed': return 'Gig (unconfirmed)';
-      case 'gig-available': return 'Gig (availability)';
+      case 'gig-confirmed': return 'Confirmed gig';
+      case 'gig-unconfirmed': return 'Possible gig (unconfirmed)';
+      case 'gig-available': return 'Potential gig date';
       default: return eventType;
     }
   }

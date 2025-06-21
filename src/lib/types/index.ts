@@ -10,8 +10,10 @@ export interface Event {
   id: number;
   date: string;
   event_type: 'rehearsal' | 'gig-confirmed' | 'gig-unconfirmed' | 'gig-available';
+  rehearsal_status?: 'unconfirmed' | 'confirmed' | 'cancelled';
   notes: string | null;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Availability {

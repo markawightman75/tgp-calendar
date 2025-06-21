@@ -105,6 +105,31 @@ export async function updateAvailability(
 }
 
 // Consolidated view functions
+export async function updateRehearsalStatus(
+  eventId: number, 
+  status: 'unconfirmed' | 'confirmed' | 'cancelled'
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('events')
+      .update({ 
+        rehearsal_status: status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', eventId)
+      .eq('event_type', 'rehearsal');
+
+    if (error) {
+      console.error('Error updating rehearsal status:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in updateRehearsalStatus:', error);
+    return false;
+  }
+}
+
 export async function createEvents(events: Omit<Event, 'id' | 'created_at'>[]): Promise<boolean> {
   try {
     const { error } = await supabase
