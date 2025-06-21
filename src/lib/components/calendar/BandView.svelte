@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getDates, getConsolidatedAvailability } from '$lib/services/database';
-  import type { DateEntry, ConsolidatedAvailability } from '$lib/types/index';
+  import type { Event, ConsolidatedAvailability } from '$lib/types/index';
 
-  let dates: DateEntry[] = [];
+  let events: Event[] = [];
   let consolidatedData: Map<number, ConsolidatedAvailability> = new Map();
   let loading = true;
   let error: string | null = null;
@@ -13,31 +13,40 @@
 
   onMount(async () => {
     try {
-      // Get dates from today onwards
-      dates = await getDates(today);
+      loading = true;
+      events = await getDates();
       
-      // Get consolidated availability for each date
-      for (const date of dates) {
-        const consolidated = await getConsolidatedAvailability(date.id);
+      // Get consolidated availability for each event
+      for (const event of events) {
+        const consolidated = await getConsolidatedAvailability(event.id);
         if (consolidated) {
-          consolidatedData.set(date.id, consolidated);
+          consolidatedData.set(event.id, consolidated);
         }
       }
       
+      consolidatedData = consolidatedData; // trigger reactivity
       loading = false;
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to load data';
+    } catch (error: unknown) {
+      console.error('Error loading data:', error);
+      if (error instanceof Error) {
+        error = error.message;
+      } else {
+        error = 'An error occurred';
+      }
       loading = false;
     }
   });
 
-  function getStatusClass(consolidated: ConsolidatedAvailability): string {
-    if (consolidated.allAvailable) return 'all-available';
-    if (consolidated.anyUnavailable) return 'some-unavailable';
-    return 'some-unknown';
+  function getStatusClass(consolidated: ConsolidatedAvailability | undefined): string {
+    if (!consolidated) return 'status-unknown';
+    
+    if (consolidated.allAvailable) return 'status-all-available';
+    if (consolidated.anyUnavailable) return 'status-some-unavailable';
+    return 'status-some-available';
   }
 
-  function getStatusIcon(consolidated: ConsolidatedAvailability): string {
+  function getStatusIcon(consolidated: ConsolidatedAvailability | undefined): string {
+    if (!consolidated) return '❓';
     if (consolidated.allAvailable) return '✓';
     if (consolidated.anyUnavailable) return '✗';
     return '?';
@@ -55,8 +64,20 @@
   function getEventClass(eventType: string): string {
     switch (eventType) {
       case 'rehearsal': return 'event-rehearsal';
-      case 'gig': return 'event-gig';
+      case 'gig-confirmed': return 'event-gig-confirmed';
+      case 'gig-unconfirmed': return 'event-gig-unconfirmed';
+      case 'gig-available': return 'event-gig-available';
       default: return '';
+    }
+  }
+  
+  function getEventTypeDisplay(eventType: string): string {
+    switch (eventType) {
+      case 'rehearsal': return 'Rehearsal';
+      case 'gig-confirmed': return 'Gig (confirmed)';
+      case 'gig-unconfirmed': return 'Gig (unconfirmed)';
+      case 'gig-available': return 'Gig (availability)';
+      default: return eventType;
     }
   }
 </script>
@@ -68,59 +89,67 @@
     <div class="loading">Loading availability data...</div>
   {:else if error}
     <div class="error">Error: {error}</div>
-  {:else if dates.length === 0}
-    <div class="empty-state">No upcoming dates found</div>
+  {:else if events.length === 0}
+    <div class="empty-state">No upcoming events found</div>
   {:else}
     <div class="dates-list">
-      {#each dates as date}
-        {@const consolidated = consolidatedData.get(date.id)}
+      {#each events as event}
+        {@const consolidated = consolidatedData.get(event.id)}
         {#if consolidated}
-          <div class="date-card {getEventClass(date.event_type)}">
+          <div class="date-card {getEventClass(event.event_type)}" data-date-id={event.id}>
             <div class="date-header">
               <div class="date-info">
-                <div class="date-day">{formatDate(date.date)}</div>
-                <div class="event-type">{date.event_type}</div>
+                <div class="date-day">{formatDate(event.date)}</div>
+                <div class="event-type">{getEventTypeDisplay(event.event_type)}</div>
               </div>
               <div class="status-indicator {getStatusClass(consolidated)}">
                 {getStatusIcon(consolidated)}
               </div>
             </div>
             
-            <div class="availability-details">
-              {#if consolidated.allAvailable}
-                <div class="all-available-message">Everyone is available! 🎉</div>
-              {:else}
-                {#if consolidated.available.length > 0}
-                  <div class="available-count">
-                    <span class="count">{consolidated.available.length}</span> available:
-                    <span class="members-list">
-                      {consolidated.available.map((m) => m.name).join(', ')}
-                    </span>
+            {#if event.event_type !== 'gig-confirmed'}
+              <div class="availability-summary">
+                {#if consolidated?.allAvailable}
+                  <div class="all-available-message">Everyone is available! 🎉</div>
+                {:else}
+                  <div class="status-details">
+                    {#if consolidated}
+                      <div class="available-count">
+                        <span class="count">{consolidated.available.length}</span> available
+                        {#if consolidated.available.length > 0}
+                          <div class="member-names">
+                            {consolidated.available.map(m => m.name).join(', ')}
+                          </div>
+                        {/if}
+                      </div>
+                      
+                      {#if consolidated.unavailable.length > 0}
+                        <div class="unavailable-count">
+                          <span class="count">{consolidated.unavailable.length}</span> unavailable
+                          <div class="member-names">
+                            {consolidated.unavailable.map(m => m.name).join(', ')}
+                          </div>
+                        </div>
+                      {/if}
+                      
+                      {#if consolidated.unknown.length > 0}
+                        <div class="unknown-count">
+                          <span class="count">{consolidated.unknown.length}</span> not responded
+                          <div class="member-names">
+                            {consolidated.unknown.map(m => m.name).join(', ')}
+                          </div>
+                        </div>
+                      {/if}
+                    {:else}
+                      <div class="loading-status">Loading...</div>
+                    {/if}
                   </div>
                 {/if}
-                
-                {#if consolidated.unavailable.length > 0}
-                  <div class="unavailable-members">
-                    <span class="count">{consolidated.unavailable.length}</span> unavailable:
-                    <span class="members-list">
-                      {consolidated.unavailable.map((m) => m.name).join(', ')}
-                    </span>
-                  </div>
-                {/if}
-                
-                {#if consolidated.unknown.length > 0}
-                  <div class="unknown-count">
-                    <span class="count">{consolidated.unknown.length}</span> not responded:
-                    <span class="members-list">
-                      {consolidated.unknown.map((m) => m.name).join(', ')}
-                    </span>
-                  </div>
-                {/if}
-              {/if}
-            </div>
+              </div>
+            {/if}
             
-            {#if date.notes}
-              <div class="date-notes">{date.notes}</div>
+            {#if event.notes}
+              <div class="date-notes">{event.notes}</div>
             {/if}
           </div>
         {/if}
@@ -164,18 +193,24 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     border-left: 4px solid #d1d5db;
+    transition: background-color 0.2s ease; /* Smooth transition for background color */
   }
   
   .event-rehearsal {
     border-left-color: #60a5fa; /* blue */
   }
   
-  .event-gig {
-    border-left-color: #34d399; /* green */
+  .event-gig-confirmed {
+    background-color: #f0fdf4; /* Light green background */
+    border-left-color: #10b981; /* emerald */
   }
   
   .event-gig-unconfirmed {
     border-left-color: #f59e0b; /* amber */
+  }
+  
+  .event-gig-available {
+    border-left-color: #a78bfa; /* purple */
   }
   
   .date-header {

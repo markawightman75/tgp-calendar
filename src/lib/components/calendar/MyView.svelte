@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { preferences } from '$lib/stores/member';
   import { getDates, getMemberAvailability, updateAvailability } from '$lib/services/database';
-  import type { DateEntry, Availability } from '$lib/types/index';
+  import { preferences } from '$lib/stores/member';
+  import type { Event, Availability } from '$lib/types/index';
 
   export let memberId: number;
 
-  let dates: DateEntry[] = [];
+  let dates: Event[] = [];
   let availabilityMap: Map<number, string> = new Map();
   let loading = true;
   let error: string | null = null;
@@ -79,8 +79,20 @@
   function getEventClass(eventType: string): string {
     switch (eventType) {
       case 'rehearsal': return 'event-rehearsal';
-      case 'gig': return 'event-gig';
+      case 'gig-confirmed': return 'event-gig-confirmed';
+      case 'gig-unconfirmed': return 'event-gig-unconfirmed';
+      case 'gig-available': return 'event-gig-available';
       default: return '';
+    }
+  }
+  
+  function getEventTypeDisplay(eventType: string): string {
+    switch (eventType) {
+      case 'rehearsal': return 'Rehearsal';
+      case 'gig-confirmed': return 'Gig (confirmed)';
+      case 'gig-unconfirmed': return 'Gig (unconfirmed)';
+      case 'gig-available': return 'Gig (availability)';
+      default: return eventType;
     }
   }
 </script>
@@ -105,42 +117,44 @@
           <div class="date-header">
             <div class="date-info">
               <div class="date-day">{formatDate(date.date)}</div>
-              <div class="event-type">{date.event_type}</div>
+              <div class="event-type">{getEventTypeDisplay(date.event_type)}</div>
             </div>
           </div>
           
-          <div class="availability-toggle">
-            <div class="toggle-label">Your availability:</div>
-            <div class="toggle-buttons">
-              <button 
-                class="toggle-button {status === 'available' ? 'active' : ''}"
-                on:click={() => handleStatusChange(date.id, 'available')}
-                disabled={isUpdating}
-              >
-                Available
-              </button>
+          {#if date.event_type !== 'gig-confirmed'}
+            <div class="availability-toggle">
+              <div class="toggle-label">My availability:</div>
+              <div class="toggle-buttons">
+                <button 
+                  class="toggle-button {status === 'available' ? 'active' : ''}"
+                  on:click={() => handleStatusChange(date.id, 'available')}
+                  disabled={isUpdating}
+                >
+                  Available
+                </button>
+                
+                <button 
+                  class="toggle-button {status === 'unavailable' ? 'active' : ''}"
+                  on:click={() => handleStatusChange(date.id, 'unavailable')}
+                  disabled={isUpdating}
+                >
+                  Unavailable
+                </button>
+                
+                <button 
+                  class="toggle-button {status === 'unknown' ? 'active' : ''}"
+                  on:click={() => handleStatusChange(date.id, 'unknown')}
+                  disabled={isUpdating}
+                >
+                  Not sure
+                </button>
+              </div>
               
-              <button 
-                class="toggle-button {status === 'unavailable' ? 'active' : ''}"
-                on:click={() => handleStatusChange(date.id, 'unavailable')}
-                disabled={isUpdating}
-              >
-                Unavailable
-              </button>
-              
-              <button 
-                class="toggle-button {status === 'unknown' ? 'active' : ''}"
-                on:click={() => handleStatusChange(date.id, 'unknown')}
-                disabled={isUpdating}
-              >
-                Not sure
-              </button>
+              {#if isUpdating}
+                <div class="updating-indicator">Updating...</div>
+              {/if}
             </div>
-            
-            {#if isUpdating}
-              <div class="updating-indicator">Updating...</div>
-            {/if}
-          </div>
+          {/if}
           
           {#if date.notes}
             <div class="date-notes">{date.notes}</div>
@@ -193,18 +207,24 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     border-left: 4px solid #d1d5db;
+    transition: background-color 0.2s ease; /* Smooth transition for background color */
   }
   
   .event-rehearsal {
     border-left-color: #60a5fa; /* blue */
   }
   
-  .event-gig {
-    border-left-color: #34d399; /* green */
+  .event-gig-confirmed {
+    background-color: #f0fdf4; /* Light green background */
+    border-left-color: #10b981; /* emerald */
   }
   
   .event-gig-unconfirmed {
     border-left-color: #f59e0b; /* amber */
+  }
+  
+  .event-gig-available {
+    border-left-color: #a78bfa; /* purple */
   }
   
   .date-header {

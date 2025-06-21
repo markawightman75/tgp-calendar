@@ -1,5 +1,5 @@
 import { supabase } from '$lib/supabase_client';
-import type { Member, DateEntry, Availability, ConsolidatedAvailability } from '$lib/types';
+import type { Member, Event, Availability, ConsolidatedAvailability } from '$lib/types/index';
 
 // Member functions
 export async function getMembers(): Promise<Member[]> {
@@ -31,8 +31,8 @@ export async function getMemberById(id: number): Promise<Member | null> {
   return data as Member;
 }
 
-// Date functions
-export async function getDates(startDate?: string, endDate?: string): Promise<DateEntry[]> {
+// Event functions
+export async function getDates(startDate?: string, endDate?: string): Promise<Event[]> {
   let query = supabase
     .from('events')
     .select('*')
@@ -53,7 +53,7 @@ export async function getDates(startDate?: string, endDate?: string): Promise<Da
     return [];
   }
   
-  return data as DateEntry[];
+  return data as Event[];
 }
 
 // Availability functions
@@ -106,19 +106,19 @@ export async function updateAvailability(
 
 // Consolidated view functions
 export async function getConsolidatedAvailability(dateId: number): Promise<ConsolidatedAvailability | null> {
-  // Get the date
-  const { data: dateData, error: dateError } = await supabase
+  // Get the event
+  const { data: eventData, error: eventError } = await supabase
     .from('events')
     .select('*')
     .eq('id', dateId)
     .single();
   
-  if (dateError || !dateData) {
-    console.error(`Error fetching date ${dateId}:`, dateError);
+  if (eventError || !eventData) {
+    console.error(`Error fetching event ${dateId}:`, eventError);
     return null;
   }
   
-  // Get all members
+  const event = eventData as Event;
   const { data: membersData, error: membersError } = await supabase
     .from('members')
     .select('*')
@@ -129,14 +129,14 @@ export async function getConsolidatedAvailability(dateId: number): Promise<Conso
     return null;
   }
   
-  // Get availability for this date
+  // Get availability for this event
   const { data: availabilityData, error: availabilityError } = await supabase
     .from('availability')
     .select('*')
     .eq('event_id', dateId);
   
   if (availabilityError) {
-    console.error(`Error fetching availability for date ${dateId}:`, availabilityError);
+    console.error(`Error fetching availability for event ${dateId}:`, availabilityError);
     return null;
   }
   
@@ -147,28 +147,28 @@ export async function getConsolidatedAvailability(dateId: number): Promise<Conso
   });
   
   // Categorize members by availability
-  const available: Member[] = [];
-  const unavailable: Member[] = [];
-  const unknown: Member[] = [];
+  const availableMembers: Member[] = [];
+  const unavailableMembers: Member[] = [];
+  const unknownMembers: Member[] = [];
   
   membersData.forEach(member => {
     const status = availabilityMap.get(member.id) || 'unknown';
     if (status === 'available') {
-      available.push(member);
+      availableMembers.push(member);
     } else if (status === 'unavailable') {
-      unavailable.push(member);
+      unavailableMembers.push(member);
     } else {
-      unknown.push(member);
+      unknownMembers.push(member);
     }
   });
   
   return {
-    date: dateData as DateEntry,
-    available,
-    unavailable,
-    unknown,
-    allAvailable: unavailable.length === 0 && unknown.length === 0,
-    anyUnavailable: unavailable.length > 0,
-    allResponded: unknown.length === 0
+    event: event,
+    available: availableMembers,
+    unavailable: unavailableMembers,
+    unknown: unknownMembers,
+    allAvailable: unknownMembers.length === 0 && unavailableMembers.length === 0 && availableMembers.length > 0,
+    anyUnavailable: unavailableMembers.length > 0,
+    allResponded: unknownMembers.length === 0
   };
 }

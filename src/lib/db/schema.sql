@@ -13,7 +13,7 @@ create table if not exists members (
 create table if not exists events (
   id serial primary key,
   date date not null unique,
-  event_type text not null default 'rehearsal' check (event_type in ('rehearsal', 'gig')),
+  event_type text not null default 'rehearsal' check (event_type in ('rehearsal', 'gig-confirmed', 'gig-unconfirmed', 'gig-available')),
   notes text,
   created_at timestamp with time zone default now()
 );

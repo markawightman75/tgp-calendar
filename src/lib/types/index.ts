@@ -9,7 +9,7 @@ export interface Member {
 export interface Event {
   id: number;
   date: string;
-  event_type: 'rehearsal' | 'gig';
+  event_type: 'rehearsal' | 'gig-confirmed' | 'gig-unconfirmed' | 'gig-available';
   notes: string | null;
   created_at: string;
 }
