@@ -93,7 +93,10 @@
               {:else}
                 {#if consolidated.available.length > 0}
                   <div class="available-count">
-                    <span class="count">{consolidated.available.length}</span> available
+                    <span class="count">{consolidated.available.length}</span> available:
+                    <span class="members-list">
+                      {consolidated.available.map((m) => m.name).join(', ')}
+                    </span>
                   </div>
                 {/if}
                 
@@ -108,7 +111,10 @@
                 
                 {#if consolidated.unknown.length > 0}
                   <div class="unknown-count">
-                    <span class="count">{consolidated.unknown.length}</span> not responded
+                    <span class="count">{consolidated.unknown.length}</span> not responded:
+                    <span class="members-list">
+                      {consolidated.unknown.map((m) => m.name).join(', ')}
+                    </span>
                   </div>
                 {/if}
               {/if}
