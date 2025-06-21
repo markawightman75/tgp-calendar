@@ -315,8 +315,8 @@
   }
   
   .toggle-button.active:nth-child(3) {
-    background-color: #f3f4f6;
-    color: #6b7280;
+    background-color: #dbeafe; /* Light blue background */
+    color: #1e40af; /* Darker blue text for better contrast */
   }
   
   .toggle-button:disabled {
