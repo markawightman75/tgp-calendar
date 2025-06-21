@@ -99,8 +99,10 @@
           <div class="date-card {getEventClass(event.event_type)}" data-date-id={event.id}>
             <div class="date-header">
               <div class="date-info">
-                <div class="date-day">{formatDate(event.date)}</div>
-                <div class="event-type">{getEventTypeDisplay(event.event_type)}</div>
+                <div class="date-day">
+                  {formatDate(event.date)}
+                  <span class="event-type">{getEventTypeDisplay(event.event_type)}</span>
+                </div>
               </div>
               <div class="status-indicator {getStatusClass(consolidated)}">
                 {getStatusIcon(consolidated)}
@@ -223,18 +225,23 @@
   .date-info {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
   }
   
   .date-day {
     font-weight: 600;
     font-size: 1.125rem;
     color: #1f2937;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    line-height: 1;
   }
   
   .event-type {
     font-size: 0.875rem;
     color: #6b7280;
-    text-transform: capitalize;
+    font-weight: normal;
   }
   
   .status-indicator {

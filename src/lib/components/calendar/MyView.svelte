@@ -116,8 +116,10 @@
         <div class="date-card {getEventClass(date.event_type)}">
           <div class="date-header">
             <div class="date-info">
-              <div class="date-day">{formatDate(date.date)}</div>
-              <div class="event-type">{getEventTypeDisplay(date.event_type)}</div>
+              <div class="date-day">
+                {formatDate(date.date)}
+                <span class="event-type">{getEventTypeDisplay(date.event_type)}</span>
+              </div>
             </div>
           </div>
           
@@ -237,18 +239,24 @@
   .date-info {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
   }
   
   .date-day {
     font-weight: 600;
     font-size: 1.125rem;
     color: #1f2937;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    line-height: 1;
   }
   
   .event-type {
     font-size: 0.875rem;
     color: #6b7280;
     text-transform: capitalize;
+    font-weight: normal;
   }
   
   .availability-toggle {
