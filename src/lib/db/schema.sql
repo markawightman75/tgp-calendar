@@ -52,13 +52,13 @@ create policy "Allow public read access to availability"
   using (true);
 
 -- Allow anonymous inserts and updates
-create policy "Allow anonymous inserts to members" on members for insert with check (true);
-create policy "Allow anonymous inserts to events" on events for insert with check (true);
-create policy "Allow anonymous inserts to availability" on availability for insert with check (true);
+create policy "Allow anonymous inserts to members" on members for insert to anon, authenticated with check (true);
+create policy "Allow anonymous inserts to events" on events for insert to anon, authenticated with check (true);
+create policy "Allow anonymous inserts to availability" on availability for insert to anon, authenticated with check (true);
 
-create policy "Allow anonymous updates to members" on members for update using (true);
-create policy "Allow anonymous updates to events" on events for update using (true);
-create policy "Allow anonymous updates to availability" on availability for update using (true);
+create policy "Allow anonymous updates to members" on members for update to anon, authenticated using (true) with check (true);
+create policy "Allow anonymous updates to events" on events for update to anon, authenticated using (true) with check (true);
+create policy "Allow anonymous updates to availability" on availability for update to anon, authenticated using (true) with check (true);
 
 -- Insert 1 sample band member
 insert into members (name, instrument) values

@@ -1,7 +1,80 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getDates, getConsolidatedAvailability } from '$lib/services/database';
+  import { getDates, getConsolidatedAvailability, createEvents } from '$lib/services/database';
   import type { Event, ConsolidatedAvailability } from '$lib/types/index';
+  
+  // Function to get next occurrence of a specific day of week (0 = Sunday, 1 = Monday, etc.)
+  function getNextDayOfWeek(date: Date, dayOfWeek: number): Date {
+    const result = new Date(date);
+    result.setDate(date.getDate() + ((dayOfWeek + 7 - date.getDay()) % 7) || 7);
+    return result;
+  }
+  
+  // Function to generate events for the next 4 weeks
+  async function generateFutureEvents() {
+    try {
+      // Get the latest date from existing events
+      const allEvents = await getDates();
+      if (allEvents.length === 0) return;
+      
+      // Sort events by date to find the latest one
+      const sortedEvents = [...allEvents].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      const latestDate = new Date(sortedEvents[0].date);
+      
+      // Calculate next 4 weeks of events
+      const newEvents: Omit<Event, 'id' | 'created_at'>[] = [];
+      let currentDate = new Date(latestDate);
+      
+      // Start from the day after the latest date
+      currentDate.setDate(currentDate.getDate() + 1);
+      
+      // Find the next 4 weeks of Wednesdays, Saturdays, and Sundays
+      for (let week = 0; week < 4; week++) {
+        // Add Wednesday rehearsal
+        const nextWed = getNextDayOfWeek(currentDate, 3); // 3 = Wednesday
+        newEvents.push({
+          date: nextWed.toISOString().split('T')[0],
+          event_type: 'rehearsal' as const,
+          notes: 'Weekly rehearsal'
+        });
+        
+        // Add weekend gig availability (Saturday)
+        const nextSat = getNextDayOfWeek(currentDate, 6); // 6 = Saturday
+        newEvents.push({
+          date: nextSat.toISOString().split('T')[0],
+          event_type: 'gig-available' as const,
+          notes: 'Potential gig date'
+        });
+        
+        // Add weekend gig availability (Sunday)
+        const nextSun = getNextDayOfWeek(currentDate, 0); // 0 = Sunday
+        newEvents.push({
+          date: nextSun.toISOString().split('T')[0],
+          event_type: 'gig-available' as const,
+          notes: 'Potential gig date'
+        });
+        
+        // Move to next week
+        currentDate = new Date(nextWed);
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+      
+      // Create events in the database
+      const success = await createEvents(newEvents);
+      if (success) {
+        alert('Successfully added future events!');
+        // Reload the events
+        await loadData();
+      } else {
+        alert('Failed to add future events');
+      }
+    } catch (error) {
+      console.error('Error generating future events:', error);
+      alert('An error occurred while generating events');
+    }
+  }
 
   let events: Event[] = [];
   let consolidatedData: Map<number, ConsolidatedAvailability> = new Map();
@@ -11,10 +84,11 @@
   // Get current date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
 
-  onMount(async () => {
+  async function loadData() {
     try {
       loading = true;
-      events = await getDates();
+      const allEvents = await getDates();
+      events = allEvents;
       
       // Get consolidated availability for each event
       for (const event of events) {
@@ -24,17 +98,22 @@
         }
       }
       
-      consolidatedData = consolidatedData; // trigger reactivity
+      consolidatedData = new Map(consolidatedData); // trigger reactivity
       loading = false;
-    } catch (error: unknown) {
-      console.error('Error loading data:', error);
-      if (error instanceof Error) {
-        error = error.message;
+    } catch (err: unknown) {
+      console.error('Error loading data:', err);
+      if (err instanceof Error) {
+        error = err.message;
       } else {
         error = 'An error occurred';
       }
       loading = false;
     }
+  }
+  
+  // Load data when component mounts
+  onMount(() => {
+    loadData();
   });
 
   function getStatusClass(consolidated: ConsolidatedAvailability | undefined): string {
@@ -83,7 +162,9 @@
 </script>
 
 <div class="band-view">
-  <h2>Band Availability</h2>
+  <div class="header-row">
+    <h2>Band Availability</h2>
+  </div>
   
   {#if loading}
     <div class="loading">Loading availability data...</div>
@@ -156,6 +237,11 @@
           </div>
         {/if}
       {/each}
+      <div class="add-events-container">
+        <button class="add-events-btn" on:click={generateFutureEvents}>
+          Add events for next 4 weeks
+        </button>
+      </div>
     </div>
   {/if}
 </div>
@@ -165,6 +251,44 @@
     padding: 1rem;
     max-width: 800px;
     margin: 0 auto;
+  }
+  
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .add-events-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+    width: 100%;
+  }
+
+  .add-events-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    &:hover {
+      background-color: #45a049;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
   }
   
   h2 {

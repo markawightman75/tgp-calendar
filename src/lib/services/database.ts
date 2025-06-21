@@ -105,6 +105,24 @@ export async function updateAvailability(
 }
 
 // Consolidated view functions
+export async function createEvents(events: Omit<Event, 'id' | 'created_at'>[]): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('events')
+      .insert(events);
+      
+    if (error) {
+      console.error('Error creating events:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in createEvents:', error);
+    return false;
+  }
+}
+
 export async function getConsolidatedAvailability(dateId: number): Promise<ConsolidatedAvailability | null> {
   // Get the event
   const { data: eventData, error: eventError } = await supabase
