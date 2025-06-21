@@ -46,7 +46,7 @@
         newEvents.push({
           date: nextSat.toISOString().split('T')[0],
           event_type: 'gig-available' as const,
-          notes: 'Potential gig date'
+          notes: null
         });
         
         // Add weekend gig availability (Sunday)
@@ -54,7 +54,7 @@
         newEvents.push({
           date: nextSun.toISOString().split('T')[0],
           event_type: 'gig-available' as const,
-          notes: 'Potential gig date'
+          notes: null
         });
         
         // Move to next week

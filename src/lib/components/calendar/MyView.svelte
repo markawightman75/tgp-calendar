@@ -98,8 +98,7 @@
 </script>
 
 <div class="my-view">
-  <h2>My Availability</h2>
-  <div class="member-name">{$preferences.memberName}</div>
+  <h2>My Availability ({$preferences.memberName})</h2>
   
   {#if loading}
     <div class="loading">Loading your availability...</div>
@@ -169,22 +168,16 @@
 
 <style>
   .my-view {
-    padding: 1rem;
+    padding: 1rem;    
     max-width: 800px;
     margin: 0 auto;
   }
   
   h2 {
-    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
     text-align: center;
     color: #1f2937;
-  }
-  
-  .member-name {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 1.125rem;
-    color: #4b5563;
   }
   
   .loading, .error, .empty-state {
