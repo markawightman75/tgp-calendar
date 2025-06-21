@@ -38,7 +38,7 @@
           date: nextWed.toISOString().split('T')[0],
           event_type: 'rehearsal' as const,
           rehearsal_status: 'unconfirmed',
-          notes: 'Weekly rehearsal'
+          notes: null
         });
         
         // Add weekend gig availability (Saturday)
@@ -65,7 +65,6 @@
       // Create events in the database
       const success = await createEvents(newEvents);
       if (success) {
-        alert('Successfully added future events!');
         // Reload the events
         await loadData();
       } else {
@@ -173,7 +172,7 @@
   </div>
   
   {#if loading}
-    <div class="loading">Loading availability data...</div>
+    <div class="loading">Loading events...</div>
   {:else if error}
     <div class="error">Error: {error}</div>
   {:else if events.length === 0}
@@ -282,7 +281,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1.0rem;
   }
   
   .add-events-container {
@@ -317,7 +317,7 @@
   }
   
   h2 {
-    margin-bottom: 1.5rem;
+    font-size: 1.5rem;    
     text-align: center;
     color: #1f2937;
   }
