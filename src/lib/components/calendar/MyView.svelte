@@ -76,11 +76,10 @@
     });
   }
 
-  function getDayClass(dayType: string): string {
-    switch (dayType) {
-      case 'wednesday': return 'day-wednesday';
-      case 'friday': return 'day-friday';
-      case 'saturday': return 'day-saturday';
+  function getEventClass(eventType: string): string {
+    switch (eventType) {
+      case 'rehearsal': return 'event-rehearsal';
+      case 'gig': return 'event-gig';
       default: return '';
     }
   }
@@ -102,7 +101,7 @@
         {@const status = availabilityMap.get(date.id) || 'unknown'}
         {@const isUpdating = updating.has(date.id)}
         
-        <div class="date-card {getDayClass(date.day_type)}">
+        <div class="date-card {getEventClass(date.event_type)}">
           <div class="date-header">
             <div class="date-info">
               <div class="date-day">{formatDate(date.date)}</div>
@@ -196,15 +195,15 @@
     border-left: 4px solid #d1d5db;
   }
   
-  .day-wednesday {
+  .event-rehearsal {
     border-left-color: #60a5fa; /* blue */
   }
   
-  .day-friday {
+  .event-gig {
     border-left-color: #34d399; /* green */
   }
   
-  .day-saturday {
+  .event-gig-unconfirmed {
     border-left-color: #f59e0b; /* amber */
   }
   

@@ -9,7 +9,6 @@ export interface Member {
 export interface Event {
   id: number;
   date: string;
-  day_type: 'wednesday' | 'friday' | 'saturday';
   event_type: 'rehearsal' | 'gig';
   notes: string | null;
   created_at: string;

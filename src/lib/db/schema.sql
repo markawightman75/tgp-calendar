@@ -13,7 +13,6 @@ create table if not exists members (
 create table if not exists events (
   id serial primary key,
   date date not null unique,
-  day_type text not null check (day_type in ('wednesday', 'friday', 'saturday')),
   event_type text not null default 'rehearsal' check (event_type in ('rehearsal', 'gig')),
   notes text,
   created_at timestamp with time zone default now()
@@ -68,16 +67,16 @@ insert into members (name, instrument) values
 -- Generate dates (Wednesdays, Fridays, and Saturdays until the end of 2025)
 -- This would be done with a function in a real implementation
 -- For now, we'll add a few sample dates
-insert into events (date, day_type, event_type) values
-  ('2025-06-25', 'wednesday', 'rehearsal'),
-  ('2025-06-27', 'friday', 'rehearsal'),
-  ('2025-06-28', 'saturday', 'gig'),
-  ('2025-07-02', 'wednesday', 'rehearsal'),
-  ('2025-07-04', 'friday', 'rehearsal'),
-  ('2025-07-05', 'saturday', 'gig'),
-  ('2025-07-09', 'wednesday', 'rehearsal'),
-  ('2025-07-11', 'friday', 'rehearsal'),
-  ('2025-07-12', 'saturday', 'gig');
+insert into events (date, event_type) values
+  ('2025-06-25', 'rehearsal'),
+  ('2025-06-27', 'rehearsal'),
+  ('2025-06-28', 'gig'),
+  ('2025-07-02', 'rehearsal'),
+  ('2025-07-04', 'rehearsal'),
+  ('2025-07-05', 'gig'),
+  ('2025-07-09', 'rehearsal'),
+  ('2025-07-11', 'rehearsal'),
+  ('2025-07-12', 'gig');
 
 -- Generate initial availability entries (all 'unknown')
 -- In a real implementation, we would use a function to generate these
