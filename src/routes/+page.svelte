@@ -1,8 +1,24 @@
 <script>
+  import { onMount } from 'svelte';
   import App from '$lib/components/App.svelte';
+  import Login from '$lib/components/Login.svelte';
+
+  let authed = false;
+
+  onMount(() => {
+    authed = localStorage.getItem('auth') === 'true';
+  });
+
+  function handleAuthed() {
+    authed = true;
+  }
 </script>
 
-<App />
+{#if authed}
+  <App />
+{:else}
+  <Login on:authed={handleAuthed} />
+{/if}
 
 <style>
   :global(body) {
