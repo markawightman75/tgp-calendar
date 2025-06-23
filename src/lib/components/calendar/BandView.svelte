@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getDates, getConsolidatedAvailability, createEvents, updateRehearsalStatus } from '$lib/services/database';
+  import { getDates, createEvents, updateRehearsalStatus } from '$lib/services/database';
+  import { getConsolidatedAvailabilityBulk } from '$lib/services/consolidated';
   import type { Event, ConsolidatedAvailability } from '$lib/types/index';
   
   // Function to get next occurrence of a specific day of week (0 = Sunday, 1 = Monday, etc.)
@@ -110,15 +111,8 @@
       const allEvents = await getDates();
       events = allEvents;
       
-      // Get consolidated availability for each event
-      for (const event of events) {
-        const consolidated = await getConsolidatedAvailability(event.id);
-        if (consolidated) {
-          consolidatedData.set(event.id, consolidated);
-        }
-      }
-      
-      consolidatedData = new Map(consolidatedData); // trigger reactivity
+      // Get consolidated availability for all events in a single request
+      consolidatedData = await getConsolidatedAvailabilityBulk(events);
       loading = false;
     } catch (err: unknown) {
       console.error('Error loading data:', err);
