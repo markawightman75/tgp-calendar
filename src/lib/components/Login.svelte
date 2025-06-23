@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -21,8 +21,9 @@
     if (error) error = '';
   }
 
-  onMount(() => {
+  onMount(async () => {
     // Automatically focus the password field when component mounts
+    await tick();
     inputEl?.focus();
   });
 </script>
@@ -35,6 +36,7 @@
     id="password-input"
     class="password-input mb-4"
     type="password"
+    autofocus
     bind:value={password}
     bind:this={inputEl}
     autocomplete="current-password"
