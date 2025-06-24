@@ -1,12 +1,17 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import App from '$lib/components/App.svelte';
   import Login from '$lib/components/Login.svelte';
+  import { browser } from '$app/environment';
 
-  let authed = false;
+  // null = auth status unknown (avoids login flash during SSR)
+  let authed: boolean | null = browser ? (localStorage.getItem('auth') === 'true') : null;
 
+  // When component hydrates in the browser and auth state hasn't been determined, read it.
   onMount(() => {
-    authed = localStorage.getItem('auth') === 'true';
+    if (authed === null) {
+      authed = localStorage.getItem('auth') === 'true';
+    }
   });
 
   function handleAuthed() {
@@ -14,7 +19,9 @@
   }
 </script>
 
-{#if authed}
+{#if authed === null}
+  <!-- Optionally show a loader; rendering nothing avoids flash -->
+{:else if authed}
   <App />
 {:else}
   <Login on:authed={handleAuthed} />
