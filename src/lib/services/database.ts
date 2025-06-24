@@ -86,22 +86,38 @@ export async function getDateAvailability(dateId: number): Promise<Availability[
 }
 
 export async function updateAvailability(
-  memberId: number, 
-  dateId: number, 
+  memberId: number,
+  dateId: number,
   status: 'unknown' | 'available' | 'unavailable'
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('availability')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('member_id', memberId)
-    .eq('event_id', dateId);
-  
-  if (error) {
-    console.error(`Error updating availability for member ${memberId} and date ${dateId}:`, error);
+  try {
+    // Use UPSERT so that a record is inserted if it doesn't already exist.
+    const { error } = await supabase
+      .from('availability')
+      .upsert(
+        {
+          member_id: memberId,
+          event_id: dateId,
+          status,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'member_id,event_id',
+        }
+      );
+
+    if (error) {
+      console.error(
+        `Error upserting availability for member ${memberId} and event ${dateId}:`,
+        error
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Unexpected error in updateAvailability:', err);
     return false;
   }
-  
-  return true;
 }
 
 // Consolidated view functions
